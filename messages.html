@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-    <link rel="icon" type="image/x-icon" href="favicon.png">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -542,60 +541,6 @@
 
         function getConversationKey(uid1, uid2) {
             return [uid1, uid2].sort().join('_');
-        }
-
-        function loadConversations() {
-            const conversationsList = document.getElementById('conversationsList');
-            const friends = currentUserData.friends || {};
-            const friendIds = Object.keys(friends);
-            
-            if (friendIds.length === 0) {
-                conversationsList.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-muted);"><p>No friends to message</p><p style="font-size: 13px; margin-top: 10px;">Add friends to start chatting!</p></div>';
-                return;
-            }
-            
-            Promise.all(friendIds.map(async (friendId) => {
-                const friendRef = ref(database, 'users/' + friendId);
-                const snapshot = await get(friendRef);
-                if (!snapshot.exists()) return null;
-                
-                const friendData = snapshot.val();
-                const convKey = getConversationKey(currentUser.uid, friendId);
-                const messagesRef = ref(database, 'conversations/' + convKey);
-                const messagesSnapshot = await get(messagesRef);
-                
-                let lastMessage = 'Start a conversation';
-                if (messagesSnapshot.exists()) {
-                    const messages = Object.values(messagesSnapshot.val());
-                    const sorted = messages.sort((a, b) => b.timestamp - a.timestamp);
-                    if (sorted[0]) {
-                        lastMessage = sorted[0].text;
-                    }
-                }
-                
-                return {
-                    uid: friendId,
-                    username: friendData.username,
-                    lastMessage: lastMessage
-                };
-            })).then(conversations => {
-                const validConvs = conversations.filter(c => c !== null);
-                
-                conversationsList.innerHTML = validConvs.map(conv => {
-                    const avatar = conv.username.charAt(0).toUpperCase();
-                    const isActive = activeChat === conv.uid;
-                    
-                    return `
-                        <div class="conversation-item ${isActive ? 'active' : ''}" onclick="window.openChat('${conv.uid}')">
-                            <div class="conversation-avatar">${avatar}</div>
-                            <div class="conversation-info">
-                                <div class="conversation-name">${conv.username}</div>
-                                <div class="conversation-preview">${conv.lastMessage.substring(0, 30)}${conv.lastMessage.length > 30 ? '...' : ''}</div>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-            });
         }
 
         window.openChat = async function(friendId) {
